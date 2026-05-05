@@ -1,26 +1,52 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits, Events, Collection } = require("discord.js");
+const { 
+  Client, 
+  GatewayIntentBits, 
+  Events, 
+  Collection, 
+  Partials 
+} = require("discord.js");
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ],
+  partials: [Partials.Message, Partials.Channel]
 });
 
+// ✅ commands init
 client.commands = new Collection();
 
-/* LOAD COMMAND */
+/* ================= COMMANDS ================= */
 const panelCommand = require("./commands/hidalgo-panel");
 client.commands.set(panelCommand.data.name, panelCommand);
 
-/* LOAD HANDLER */
+/* ================= HANDLERS ================= */
 const roleRequestHandler = require("./interactions/roleRequest");
 
-/* READY */
+/* ================= LOGS ================= */
+// 👉 keep all logs here (easy to manage)
+[
+  "./logs/voiceLogs",
+  "./logs/messageLogs",
+  "./logs/memberLogs",
+  "./logs/leaveLogs",
+  "./logs/joinLogs" // ✅ ADDED
+].forEach(file => {
+  require(file)(client);
+});
+
+/* ================= READY ================= */
 client.once(Events.ClientReady, () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-/* INTERACTIONS */
+/* ================= INTERACTIONS ================= */
 client.on(Events.InteractionCreate, async (interaction) => {
   try {
 
@@ -34,7 +60,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
   } catch (err) {
-    console.error(err);
+    console.error("Interaction error:", err);
   }
 });
 
