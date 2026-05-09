@@ -11,30 +11,30 @@ const {
 const config = require("../config.json");
 
 /* =========================
-   ROLES
+   CONFIG ROLES
 ========================= */
 
-const APPROVER_ROLES = [
-  "1500758718050996306",
-  "1130192752022388757"
-];
-
-const PARENT_ROLES = [
-  "1261504441626919035",
-  "1500758718050996306",
-  "1130192752022388757"
-];
+const APPROVER_ROLES = config.approverRoles;
+const PARENT_ROLES = config.parentRoles;
+const ADD_ROLE_ID = config.addRoleId;
 
 /* =========================
    ACCOUNT AGE
 ========================= */
 
 function getAccountAge(user) {
+
   const diff = Date.now() - user.createdAt;
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  const days = Math.floor(
+    diff / (1000 * 60 * 60 * 24)
+  );
 
   const years = Math.floor(days / 365);
-  const months = Math.floor((days % 365) / 30);
+
+  const months = Math.floor(
+    (days % 365) / 30
+  );
 
   return `${years} year(s), ${months} month(s)`;
 }
@@ -44,14 +44,22 @@ function getAccountAge(user) {
 ========================= */
 
 function buildEmbed(user, ign, accountAge, guild) {
+
   return new EmbedBuilder()
+
     .setColor("#8b0000")
+
     .setAuthor({
       name: "🦋 HIDALGO ROLE REQUEST",
       iconURL: guild.iconURL({ dynamic: true })
     })
+
     .setTitle("HIDALGO ROLE REQUEST")
-    .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+
+    .setThumbnail(
+      user.displayAvatarURL({ dynamic: true })
+    )
+
     .setDescription(
 `🎀 **USER'S INFORMATION:**
 
@@ -66,10 +74,12 @@ CHARACTER NAME: \`${ign}\`
 
 🟡 **PENDING ROLE REQUEST**`
     )
+
     .setFooter({
       text: "Hidalgo Family",
       iconURL: guild.iconURL({ dynamic: true })
     })
+
     .setTimestamp();
 }
 
@@ -78,25 +88,29 @@ CHARACTER NAME: \`${ign}\`
 ========================= */
 
 function buildButtons(userId) {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`hidalgo_vouch_${userId}`)
-      .setLabel("PARENT")
-      .setEmoji("🖐️")
-      .setStyle(ButtonStyle.Primary),
 
-    new ButtonBuilder()
-      .setCustomId(`hidalgo_approve_${userId}`)
-      .setLabel("ACCEPT")
-      .setEmoji("✅")
-      .setStyle(ButtonStyle.Success),
+  return new ActionRowBuilder()
 
-    new ButtonBuilder()
-      .setCustomId(`hidalgo_deny_${userId}`)
-      .setLabel("REJECT")
-      .setEmoji("⛔")
-      .setStyle(ButtonStyle.Danger)
-  );
+    .addComponents(
+
+      new ButtonBuilder()
+        .setCustomId(`hidalgo_vouch_${userId}`)
+        .setLabel("PARENT")
+        .setEmoji("🖐️")
+        .setStyle(ButtonStyle.Primary),
+
+      new ButtonBuilder()
+        .setCustomId(`hidalgo_approve_${userId}`)
+        .setLabel("ACCEPT")
+        .setEmoji("✅")
+        .setStyle(ButtonStyle.Success),
+
+      new ButtonBuilder()
+        .setCustomId(`hidalgo_deny_${userId}`)
+        .setLabel("REJECT")
+        .setEmoji("⛔")
+        .setStyle(ButtonStyle.Danger)
+    );
 }
 
 /* =========================
@@ -106,18 +120,25 @@ function buildButtons(userId) {
 module.exports = async (interaction) => {
 
   /* =========================
-     OPEN MODAL
+     APPLY BUTTON
   ========================= */
 
-  if (interaction.isButton() && interaction.customId === "hidalgo_apply") {
+  if (
+    interaction.isButton() &&
+    interaction.customId === "hidalgo_apply"
+  ) {
 
     const modal = new ModalBuilder()
+
       .setCustomId("hidalgo_submit")
       .setTitle("Hidalgo Role Request");
 
     modal.addComponents(
+
       new ActionRowBuilder().addComponents(
+
         new TextInputBuilder()
+
           .setCustomId("ign")
           .setLabel("In-Game Name")
           .setPlaceholder("Firstname Lastname")
@@ -130,21 +151,28 @@ module.exports = async (interaction) => {
   }
 
   /* =========================
-     SUBMIT
+     SUBMIT APPLICATION
   ========================= */
 
-  if (interaction.isModalSubmit() && interaction.customId === "hidalgo_submit") {
+  if (
+    interaction.isModalSubmit() &&
+    interaction.customId === "hidalgo_submit"
+  ) {
 
-    const ign = interaction.fields.getTextInputValue("ign");
+    const ign =
+      interaction.fields.getTextInputValue("ign");
 
     if (!ign.includes(" ")) {
+
       return interaction.reply({
-        content: "❌ Use proper format: Firstname Lastname",
+        content:
+          "❌ Use proper format: Firstname Lastname",
         ephemeral: true
       });
     }
 
-    const accountAge = getAccountAge(interaction.user);
+    const accountAge =
+      getAccountAge(interaction.user);
 
     const embed = buildEmbed(
       interaction.user,
@@ -153,15 +181,19 @@ module.exports = async (interaction) => {
       interaction.guild
     );
 
-    const buttons = buildButtons(interaction.user.id);
+    const buttons =
+      buildButtons(interaction.user.id);
 
-    const channel = interaction.client.channels.cache.get(
-      config.hidalgoChannelId
-    );
+    const channel =
+      interaction.client.channels.cache.get(
+        config.hidalgoChannelId
+      );
 
     if (!channel) {
+
       return interaction.reply({
-        content: "❌ Hidalgo channel not found.",
+        content:
+          "❌ Hidalgo request channel not found.",
         ephemeral: true
       });
     }
@@ -172,7 +204,8 @@ module.exports = async (interaction) => {
     });
 
     return interaction.reply({
-      content: "✅ Application submitted.",
+      content:
+        "✅ Your application has been submitted.",
       ephemeral: true
     });
   }
@@ -183,42 +216,61 @@ module.exports = async (interaction) => {
 
   if (
     interaction.isButton() &&
-    interaction.customId.startsWith("hidalgo_vouch_")
+    interaction.customId.startsWith(
+      "hidalgo_vouch_"
+    )
   ) {
 
-    const hasRole = PARENT_ROLES.some(role =>
-      interaction.member.roles.cache.has(role)
-    );
+    const hasRole =
+      interaction.member.roles.cache.some(
+        role =>
+          PARENT_ROLES.includes(role.id)
+      );
 
     if (!hasRole) {
+
       return interaction.reply({
-        content: "❌ Only authorized parents can vouch.",
+        content:
+          "❌ Only authorized parents can vouch.",
         ephemeral: true
       });
     }
 
-    const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+    const embed =
+      EmbedBuilder.from(
+        interaction.message.embeds[0]
+      );
 
-    let desc = embed.data.description || "";
+    let desc =
+      embed.data.description || "";
 
     let current =
-      desc.match(/🎀 \*\*PARENTS:\*\* (.*)/)?.[1] || "None";
+      desc.match(
+        /🎀 \*\*PARENTS:\*\* (.*)/
+      )?.[1] || "None";
 
-    let list = current === "None"
-      ? []
-      : current.split(", ");
+    let list =
+      current === "None"
+        ? []
+        : current.split(", ");
 
-    const tag = `<@${interaction.user.id}>`;
+    const tag =
+      `<@${interaction.user.id}>`;
 
     if (list.includes(tag)) {
-      list = list.filter(v => v !== tag);
+
+      list =
+        list.filter(v => v !== tag);
+
     } else {
+
       list.push(tag);
     }
 
-    const updated = list.length
-      ? list.join(", ")
-      : "None";
+    const updated =
+      list.length
+        ? list.join(", ")
+        : "None";
 
     desc = desc.replace(
       /🎀 \*\*PARENTS:\*\* .*/,
@@ -240,23 +292,36 @@ module.exports = async (interaction) => {
 
   if (
     interaction.isButton() &&
-    interaction.customId.startsWith("hidalgo_approve_")
+    interaction.customId.startsWith(
+      "hidalgo_approve_"
+    )
   ) {
 
-    const hasRole = APPROVER_ROLES.some(role =>
-      interaction.member.roles.cache.has(role)
-    );
+    const hasRole =
+      interaction.member.roles.cache.some(
+        role =>
+          APPROVER_ROLES.includes(role.id)
+      );
 
     if (!hasRole) {
+
       return interaction.reply({
-        content: "❌ You cannot approve requests.",
+        content:
+          "❌ You are not allowed to approve requests.",
         ephemeral: true
       });
     }
 
-    const userId = interaction.customId.split("_")[2];
+    const userId =
+      interaction.customId.replace(
+        "hidalgo_approve_",
+        ""
+      );
 
-    const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+    const embed =
+      EmbedBuilder.from(
+        interaction.message.embeds[0]
+      );
 
     embed.setDescription(
       embed.data.description.replace(
@@ -272,33 +337,40 @@ module.exports = async (interaction) => {
       components: []
     });
 
-    const member = await interaction.guild.members
-      .fetch(userId)
-      .catch(() => null);
+    const member =
+      await interaction.guild.members
+        .fetch(userId)
+        .catch(() => null);
 
     if (member) {
 
-      /* AUTO CHANGE NICKNAME */
+      const match =
+        embed.data.description.match(
+          /CHARACTER NAME: `(.*?)`/
+        );
 
-      const match = embed.data.description.match(
-        /CHARACTER NAME: `(.*?)`/
-      );
+      const ign =
+        match ? match[1] : null;
 
-      const ign = match ? match[1] : null;
+      /* AUTO NICKNAME */
 
       if (ign) {
-        await member.setNickname(ign).catch(() => {});
+
+        await member
+          .setNickname(ign)
+          .catch(() => {});
       }
 
       /* ADD ROLE */
 
       await member.roles
-        .add("1261504441626919035")
+        .add(ADD_ROLE_ID)
         .catch(() => {});
     }
 
     return interaction.reply({
-      content: "✅ Approved successfully.",
+      content:
+        "✅ Request approved successfully.",
       ephemeral: true
     });
   }
@@ -309,21 +381,30 @@ module.exports = async (interaction) => {
 
   if (
     interaction.isButton() &&
-    interaction.customId.startsWith("hidalgo_deny_")
+    interaction.customId.startsWith(
+      "hidalgo_deny_"
+    )
   ) {
 
-    const hasRole = APPROVER_ROLES.some(role =>
-      interaction.member.roles.cache.has(role)
-    );
+    const hasRole =
+      interaction.member.roles.cache.some(
+        role =>
+          APPROVER_ROLES.includes(role.id)
+      );
 
     if (!hasRole) {
+
       return interaction.reply({
-        content: "❌ You cannot deny requests.",
+        content:
+          "❌ You are not allowed to deny requests.",
         ephemeral: true
       });
     }
 
-    const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+    const embed =
+      EmbedBuilder.from(
+        interaction.message.embeds[0]
+      );
 
     embed.setDescription(
       embed.data.description.replace(
@@ -340,7 +421,8 @@ module.exports = async (interaction) => {
     });
 
     return interaction.reply({
-      content: "❌ Denied successfully.",
+      content:
+        "❌ Request denied successfully.",
       ephemeral: true
     });
   }
